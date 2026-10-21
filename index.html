@@ -1,0 +1,19 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"><title>岗位选择工作台</title><style>body{margin:0;background:#f5f3ed;color:#24372f;font:16px/1.8 system-ui,sans-serif}main{max-width:570px;margin:18vh auto;padding:32px}h1{font-size:30px}p{color:#5f6a61}small{color:#748076}</style></head><body><main><h1>岗位选择工作台</h1><p id="message" role="status">正在打开你的工作台…</p><small>请使用保存的完整专属链接。岗位选择只保存在你使用的浏览器中。</small></main><script>
+(async()=>{
+ const message=document.getElementById('message');
+ const secret=new URLSearchParams(location.hash.slice(1)).get('key');
+ if(!secret||!/[A-Za-z0-9_-]{43}/.test(secret)||secret.length!==43){message.textContent='此页面需要完整专属链接才能打开。';return;}
+ if(!crypto.subtle){message.textContent='请在支持安全连接的现代浏览器中打开。';return;}
+ try{
+  const raw=Uint8Array.from(atob(secret.replace(/-/g,'+').replace(/_/g,'/')+'='),x=>x.charCodeAt(0));
+  const key=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']);
+  const response=await fetch('./payload.bin',{credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer'});
+  if(!response.ok)throw Error('payload-unavailable');
+  const payload=new Uint8Array(await response.arrayBuffer());
+  if(payload.length<29)throw Error('invalid-payload');
+  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:payload.slice(0,12),additionalData:new TextEncoder().encode('jd-private-workspace:v1'),tagLength:128},key,payload.slice(12));
+  const html=new TextDecoder('utf-8',{fatal:true}).decode(plain);
+  document.open();document.write(html);document.close();
+ }catch{message.textContent='未能打开工作台。请检查完整链接和网络连接后刷新。';}
+})();
+</script></body></html>
